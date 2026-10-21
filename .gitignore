@@ -31,3 +31,11 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Artefatos locais do projeto
+bin/
+/api
+*.log
+.env.*
+!.env.example
+tmp/
