@@ -1,6 +1,6 @@
 # Outsera Back-end
 
-API REST em Go para consultar os indicados e vencedores da categoria Pior Filme do Golden Raspberry Awards. A aplicação importa o CSV na inicialização e identifica os produtores com o menor e o maior intervalo entre vitórias consecutivas. Também oferece as consultas utilizadas pelo dashboard e pela listagem de filmes do [front-end](https://github.com/alexspnovaes/outsera-frontend).
+API REST em Go para consultar os indicados e vencedores da categoria Pior Filme do Golden Raspberry Awards. A aplicação importa o CSV na inicialização e identifica os produtores com o menor e o maior intervalo entre vitórias consecutivas, incluindo todos os empates nos resultados.
 
 O servidor utiliza `net/http` e SQLite em memória. O driver `modernc.org/sqlite` é implementado em Go, dispensando CGO e a instalação de um serviço de banco de dados.
 
@@ -38,7 +38,7 @@ As configurações são lidas de variáveis de ambiente:
 
 - `PORT`: porta HTTP, com valor padrão `8080`. Aceita um inteiro entre `1` e `65535`.
 - `CSV_PATH`: caminho do arquivo de entrada, com valor padrão `data/Movielist.csv`. Caminhos relativos são resolvidos a partir do diretório de execução.
-- `CORS_ORIGINS`: lista de origens permitidas, separadas por vírgula. O padrão é `http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:4173`, contemplando o servidor de desenvolvimento e a prévia de produção do front-end.
+- `CORS_ORIGINS`: lista de origens permitidas para requisições feitas por navegadores, separadas por vírgula. O padrão é `http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:4173`.
 
 Exemplo PowerShell:
 
@@ -52,6 +52,8 @@ go run ./cmd/api
 ## Endpoints
 
 As rotas de consulta utilizam `GET` e retornam JSON.
+
+A consulta principal do desafio é `GET /api/movies/maxMinWinIntervalForProducers`, que identifica os produtores com o menor e o maior intervalo entre prêmios consecutivos. As demais rotas permitem consultar os filmes importados e suas estatísticas.
 
 ### Filmes
 
@@ -170,12 +172,10 @@ go vet ./...
 go build ./cmd/api
 ```
 
-A suíte utiliza testes de integração com SQLite real em memória e um servidor HTTP `httptest`, sem mocks. Cobre o arquivo fornecido, filtros, paginação, consultas do dashboard, intervalos consecutivos, empates, intervalo zero, registros desordenados, deduplicação de nomes, resultados vazios, importação inválida sem alteração dos dados anteriores, validação HTTP, métodos e CORS.
+A suíte utiliza testes de integração com SQLite real em memória e um servidor HTTP `httptest`, sem mocks. Cobre o arquivo fornecido, filtros, paginação, estatísticas dos filmes, intervalos consecutivos, empates, intervalo zero, registros desordenados, deduplicação de nomes, resultados vazios, importação inválida sem alteração dos dados anteriores, validação HTTP, métodos e CORS.
 
 O CSV incluído contém 206 filmes e 42 vencedores. Os resultados de referência dos intervalos são Joel Silver, com 1 ano entre 1990 e 1991, e Matthew Vaughn, com 13 anos entre 2002 e 2015.
 
-## Integração e operação
-
-O [Outsera Front-end](https://github.com/alexspnovaes/outsera-frontend) utiliza esta API e deve ser executado em um processo separado. Durante o desenvolvimento, o proxy do Vite encaminha `/api` para `http://localhost:8080`. Para acessar o back-end diretamente em outro endereço, configure `VITE_API_BASE_URL` com a URL completa da coleção, como `http://localhost:8081/api/movies`, e inclua a origem da interface em `CORS_ORIGINS`.
+## Operação
 
 Os dados são somente de leitura pela API e permanecem em memória durante a execução. Para atualizar o conjunto de filmes, substitua o CSV e reinicie o processo. O servidor aplica limites de tempo às conexões e permite até dez segundos para concluir requisições durante o encerramento por sinal do sistema.
